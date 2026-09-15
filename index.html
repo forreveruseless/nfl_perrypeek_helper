@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NFLPerry NBA Assistant V6</title>
+<title>NFLPerry NBA Assistant V7</title>
 <style>
 :root{
  --bg:#080b11;--p:#101722;--p2:#0c121b;--line:#263247;--text:#f5f7fb;--muted:#94a2b7;
@@ -74,7 +74,7 @@ select:focus,input:focus{border-color:#728df0;box-shadow:0 0 0 3px rgba(114,141,
 <div class="wrap">
 <header>
  <div>
-  <h1>NFLPerry NBA<br>Assistant V6</h1>
+  <h1>NFLPerry NBA<br>Assistant V7</h1>
   <p class="lead">Теперь рейтинг не нужно собирать вручную: база взята прямо из ответа NFLPerry <b>nba-fantasy / bestSeason</b>. Поле <b>fpts</b> — значение, которое использует NBA SIM.</p>
  </div>
  <div class="badge" id="snapshotBadge">снимок базы загружается…</div>
@@ -154,16 +154,15 @@ select:focus,input:focus{border-color:#728df0;box-shadow:0 0 0 3px rgba(114,141,
   <section class="potential">
    <div class="potential-grid">
     <div>
-     <div class="potential-label">Потенциальный максимум по уже выпавшим командам</div>
+     <div class="potential-label">Максимальный потенциальный рейтинг состава</div>
      <div class="potential-value" id="potentialTotal">0.0 <small>FPTS</small></div>
      <div class="potential-sub" id="potentialSub">
-      Добавь первую выпавшую команду. Максимум считается как лучшая возможная комбинация игроков с учётом PG / SG / SF / PF / C / 6TH.
+      До первого выбора это абсолютный максимум из 6 совместимых игроков по всей базе.
      </div>
-     <div class="draw-history" id="drawHistory"></div>
-     <div class="current-plan" id="currentPlan" style="display:none"></div>
+     <div class="current-plan" id="potentialBreakdown"></div>
     </div>
     <div>
-     <div class="potential-label">Оптимальный состав для этих дроу</div>
+     <div class="potential-label">Лучший возможный состав от текущего состояния</div>
      <div class="optimal-list" id="optimalLineup"></div>
     </div>
    </div>
@@ -172,18 +171,11 @@ select:focus,input:focus{border-color:#728df0;box-shadow:0 0 0 3px rgba(114,141,
   <section class="panel">
   <h2>Лучший пик сейчас</h2>
   <div class="notice">
-   Сначала добавь выпавшую команду в историю. Верхний блок покажет <b>математический максимум</b> для всех уже выпавших команд.
-   Ниже помощник подскажет варианты именно для текущей команды.
+   Выбери выпавшую команду и возьми игрока. <b>Потенциальный максимум сверху меняется только после фактического выбора игрока.</b>
+   Уже выбранный игрок фиксируется, его команда и его слот исключаются из будущего максимума.
   </div>
 
-  <div class="draw-controls">
-   <div><label>Выпала команда</label><select id="pickTeam"></select></div>
-   <button class="btn primary" id="addDraw">+ Добавить дроу</button>
-  </div>
-  <div class="actions">
-   <button class="btn ghost tiny" id="undoDraw">Убрать последнюю команду</button>
-   <button class="btn ghost tiny" id="clearDraws">Очистить историю дроу</button>
-  </div>
+  <label>Выпала команда</label><select id="pickTeam"></select>
 
   <label>Свободные позиции</label><div class="chips" id="slots"></div>
   <div class="actions">
@@ -208,18 +200,18 @@ select:focus,input:focus{border-color:#728df0;box-shadow:0 0 0 3px rgba(114,141,
    <div class="roster" id="roster"></div>
   </section>
   <section class="panel" style="margin-top:18px">
-   <h2>Что означает «приоритет»</h2>
+   <h2>Как считается потенциал</h2>
    <div class="muted small" style="line-height:1.6">
-    Сначала берётся FPTS. Затем добавляется бонус за редкость позиции: насколько игрок сильнее медианного
-    лучшего варианта на этой позиции среди всех активных команд. 6TH считается универсальным слотом и получает небольшой штраф,
-    чтобы не тратить его слишком рано.
+    Потенциал — это не прогноз следующей команды. Это математический потолок состава.
+    Уже выбранные игроки фиксируются. Затем сайт берёт только неиспользованные команды и незанятые позиции
+    и находит точную комбинацию с максимальной суммой FPTS. 6TH может быть игроком любой позиции.
    </div>
   </section>
  </aside>
 </div>
 </section>
 
-<div class="footer">V6 использует точный снимок NFLPerry из HAR. История выпавших команд, потенциальный максимум, локальные поправки и текущий состав автоматически сохраняются в браузере.</div>
+<div class="footer">V7 использует точный снимок NFLPerry из HAR. Потенциальный максимум пересчитывается от уже выбранных игроков; текущий состав и ручные поправки автоматически сохраняются в браузере.</div>
 </div>
 
 <script>
@@ -238,10 +230,10 @@ let players = SNAPSHOT;
 let state = loadState();
 
 function loadState(){
-  let s={overrides:{},roster:{},drawHistory:[],importedAt:null};
+  let s={overrides:{},roster:{},importedAt:null};
   try{
     const raw=localStorage.getItem(KEY);
-    if(raw){const parsed=JSON.parse(raw);return {...s,...parsed,drawHistory:Array.isArray(parsed.drawHistory)?parsed.drawHistory:[]};}
+    if(raw){const parsed=JSON.parse(raw);return {...s,...parsed};}
   }catch(e){}
   // Migrate manual values from older helper versions if present.
   for(const k of OLD_KEYS){
@@ -313,155 +305,212 @@ function renderTeamGrid(){
   document.getElementById("teamGrid").innerHTML=ACTIVE_TEAMS.map(t=>`<div class="teamcard"><b>${t}</b><span>${TEAM_NAMES[t]}</span><span>${teamPlayers(t).length} игроков</span></div>`).join("");
 }
 
-function slotCandidates(team,slot,limit){
-  return teamPlayers(team)
-    .filter(p=>posEligible(p,slot))
-    .sort((a,b)=>rating(b)-rating(a))
-    .slice(0,Math.max(1,limit));
-}
-function permutationsOfSlots(k){
-  const out=[];
-  const used=new Array(SLOT_ORDER.length).fill(false);
-  const cur=[];
-  function rec(){
-    if(cur.length===k){out.push([...cur]);return}
-    for(let i=0;i<SLOT_ORDER.length;i++){
-      if(used[i])continue;
-      used[i]=true;cur.push(SLOT_ORDER[i]);rec();cur.pop();used[i]=false;
-    }
-  }
-  rec();
-  return out;
-}
-function bestTeamMatching(team, assigned){
-  // assigned: [{drawIndex,slot}], all for the same team.
-  const n=assigned.length;
-  const lists=assigned.map(a=>slotCandidates(team,a.slot,n));
-  if(lists.some(x=>!x.length)) return null;
 
+function bestPlayerForTeamSlot(team,slot){
   let best=null;
-  const used=new Set();
-  const chosen=new Array(n);
-
-  // Harder slots first for faster pruning, but keep mapping back to original item index.
-  const order=[...Array(n).keys()].sort((i,j)=>lists[i].length-lists[j].length);
-  const maxRemaining=new Array(n+1).fill(0);
-  for(let z=n-1;z>=0;z--){
-    const idx=order[z];
-    maxRemaining[z]=maxRemaining[z+1]+(lists[idx][0]?rating(lists[idx][0]):0);
+  for(const p of teamPlayers(team)){
+    if(!posEligible(p,slot)) continue;
+    if(!best || rating(p)>rating(best)) best=p;
   }
-
-  function rec(depth,total){
-    if(best && total+maxRemaining[depth]<=best.total+1e-9) return;
-    if(depth===n){
-      best={total, picks:assigned.map((a,i)=>({drawIndex:a.drawIndex,slot:a.slot,p:chosen[i]}))};
-      return;
-    }
-    const i=order[depth];
-    for(const p of lists[i]){
-      const id=`${p.team}|${p._id}|${fullName(p)}`;
-      if(used.has(id))continue;
-      used.add(id);chosen[i]=p;
-      rec(depth+1,total+rating(p));
-      used.delete(id);
-    }
-  }
-  rec(0,0);
   return best;
 }
-function potentialMaximum(draws){
-  const clean=(draws||[]).filter(t=>ACTIVE_TEAMS.includes(t)).slice(0,6);
-  const k=clean.length;
-  if(!k) return {total:0,picks:[],draws:clean};
 
-  let best=null;
-  const slotPerms=permutationsOfSlots(k); // max 720 for six draws
+// Hungarian algorithm for an exact max-weight assignment:
+// each remaining slot gets one DIFFERENT unused team.
+function hungarianMin(cost){
+  const n=cost.length;
+  const m=cost[0]?.length||0;
+  if(!n) return [];
+  if(m<n) return null;
 
-  for(const slots of slotPerms){
-    const grouped={};
-    for(let i=0;i<k;i++){
-      const team=clean[i];
-      (grouped[team]??=[]).push({drawIndex:i,slot:slots[i]});
-    }
+  const INF=1e15;
+  const u=new Array(n+1).fill(0);
+  const v=new Array(m+1).fill(0);
+  const p=new Array(m+1).fill(0);
+  const way=new Array(m+1).fill(0);
 
-    let total=0;
-    let picks=[];
-    let feasible=true;
-    for(const [team,assigned] of Object.entries(grouped)){
-      const r=bestTeamMatching(team,assigned);
-      if(!r){feasible=false;break}
-      total+=r.total;picks.push(...r.picks);
-    }
-    if(feasible && (!best || total>best.total+1e-9)){
-      best={total,picks,draws:clean};
-    }
+  for(let i=1;i<=n;i++){
+    p[0]=i;
+    let j0=0;
+    const minv=new Array(m+1).fill(INF);
+    const used=new Array(m+1).fill(false);
+
+    do{
+      used[j0]=true;
+      const i0=p[j0];
+      let delta=INF, j1=0;
+
+      for(let j=1;j<=m;j++){
+        if(used[j]) continue;
+        const cur=cost[i0-1][j-1]-u[i0]-v[j];
+        if(cur<minv[j]){
+          minv[j]=cur;
+          way[j]=j0;
+        }
+        if(minv[j]<delta){
+          delta=minv[j];
+          j1=j;
+        }
+      }
+
+      if(!Number.isFinite(delta) || delta>=INF/2) return null;
+
+      for(let j=0;j<=m;j++){
+        if(used[j]){
+          u[p[j]]+=delta;
+          v[j]-=delta;
+        }else{
+          minv[j]-=delta;
+        }
+      }
+      j0=j1;
+    }while(p[j0]!==0);
+
+    do{
+      const j1=way[j0];
+      p[j0]=p[j1];
+      j0=j1;
+    }while(j0!==0);
   }
-  if(!best) return {total:0,picks:[],draws:clean};
-  best.picks.sort((a,b)=>a.drawIndex-b.drawIndex);
-  return best;
+
+  const assignment=new Array(n).fill(-1);
+  for(let j=1;j<=m;j++){
+    if(p[j]>0 && p[j]<=n) assignment[p[j]-1]=j-1;
+  }
+  return assignment;
 }
+
+function potentialMaximumFromRoster(){
+  const roster=state.roster||{};
+  const locked=[];
+  const usedTeams=new Set();
+
+  for(const slot of SLOT_ORDER){
+    const r=roster[slot];
+    if(!r) continue;
+    locked.push({
+      slot,
+      team:r.team,
+      name:r.name,
+      fpts:+r.fpts,
+      locked:true
+    });
+    usedTeams.add(r.team);
+  }
+
+  const openSlots=SLOT_ORDER.filter(s=>!roster[s]);
+  const availableTeams=ACTIVE_TEAMS.filter(t=>!usedTeams.has(t));
+
+  const lockedTotal=locked.reduce((sum,x)=>sum+x.fpts,0);
+
+  if(!openSlots.length){
+    return {
+      total:lockedTotal,
+      lockedTotal,
+      remainingTotal:0,
+      locked,
+      future:[]
+    };
+  }
+
+  const candidateMatrix=[];
+  let globalMax=0;
+
+  for(const slot of openSlots){
+    const row=[];
+    for(const team of availableTeams){
+      const player=bestPlayerForTeamSlot(team,slot);
+      row.push(player);
+      if(player) globalMax=Math.max(globalMax,rating(player));
+    }
+    candidateMatrix.push(row);
+  }
+
+  const BIG=1e9;
+  const cost=candidateMatrix.map(row=>
+    row.map(player=>player ? globalMax-rating(player) : BIG)
+  );
+
+  const assignment=hungarianMin(cost);
+  if(!assignment){
+    return {
+      total:lockedTotal,
+      lockedTotal,
+      remainingTotal:0,
+      locked,
+      future:[]
+    };
+  }
+
+  const future=[];
+  let remainingTotal=0;
+
+  for(let i=0;i<openSlots.length;i++){
+    const col=assignment[i];
+    const player=candidateMatrix[i][col];
+    if(!player) continue;
+    const f=rating(player);
+    remainingTotal+=f;
+    future.push({
+      slot:openSlots[i],
+      team:availableTeams[col],
+      name:fullName(player),
+      fpts:f,
+      player,
+      locked:false
+    });
+  }
+
+  return {
+    total:lockedTotal+remainingTotal,
+    lockedTotal,
+    remainingTotal,
+    locked,
+    future
+  };
+}
+
 function renderPotential(){
-  state.drawHistory=Array.isArray(state.drawHistory)?state.drawHistory:[];
-  const result=potentialMaximum(state.drawHistory);
+  const result=potentialMaximumFromRoster();
   const total=document.getElementById("potentialTotal");
   const sub=document.getElementById("potentialSub");
-  const hist=document.getElementById("drawHistory");
+  const breakdown=document.getElementById("potentialBreakdown");
   const lineup=document.getElementById("optimalLineup");
-  const current=document.getElementById("currentPlan");
 
   total.innerHTML=`${result.total.toFixed(1)} <small>FPTS</small>`;
 
-  if(!result.draws.length){
-    sub.textContent="Добавь первую выпавшую команду. Максимум считается как лучшая возможная комбинация игроков с учётом PG / SG / SF / PF / C / 6TH.";
-    hist.innerHTML='<span class="muted small">Пока ни одной команды не добавлено.</span>';
-    lineup.innerHTML='<div class="muted small">Оптимальный состав появится после первого дроу.</div>';
-    current.style.display="none";
-    return;
+  const chosen=result.locked.length;
+  if(chosen===0){
+    sub.innerHTML=`Это <b>абсолютный потолок</b>: лучший возможный состав из 6 игроков по всей базе,
+    при этом каждая позиция занята один раз и каждая команда используется максимум один раз.`;
+  }else{
+    sub.innerHTML=`Зафиксировано игроков: <b>${chosen}</b>. Потенциал =
+    уже выбранные игроки + лучшие возможные игроки из <b>неиспользованных команд</b>
+    на <b>незанятые позиции</b>.`;
   }
 
-  sub.innerHTML=`Точный максимум для <b>${result.draws.length}</b> ${result.draws.length===1?"выпавшей команды":"выпавших команд"}.
-  Каждый дроу даёт ровно одного игрока; позиции не повторяются, а один и тот же игрок не может использоваться дважды.`;
+  breakdown.innerHTML=
+    `<b>Выбрано:</b> ${result.lockedTotal.toFixed(1)} FPTS
+     &nbsp; + &nbsp;
+     <b>Оставшийся потолок:</b> ${result.remainingTotal.toFixed(1)} FPTS
+     &nbsp; = &nbsp;
+     <b>${result.total.toFixed(1)} FPTS</b>`;
 
-  hist.innerHTML=result.draws.map((t,i)=>`<span class="draw-chip"><i>${i+1}</i>${t}</span>`).join("");
+  const rows=[
+    ...result.locked.map(x=>({...x,status:"✓ выбран"})),
+    ...result.future.map(x=>({...x,status:"потенциал"}))
+  ].sort((a,b)=>SLOT_ORDER.indexOf(a.slot)-SLOT_ORDER.indexOf(b.slot));
 
-  lineup.innerHTML=result.picks
-    .slice()
-    .sort((a,b)=>SLOT_ORDER.indexOf(a.slot)-SLOT_ORDER.indexOf(b.slot))
-    .map(x=>`<div class="optimal-row">
+  lineup.innerHTML=rows.map(x=>`
+    <div class="optimal-row">
       <div class="slot">${x.slot}</div>
-      <div><b>${esc(fullName(x.p))}</b><div class="meta">${x.p.team} · дроу #${x.drawIndex+1}</div></div>
-      <div class="fp">${rating(x.p).toFixed(1)}</div>
-    </div>`).join("");
-
-  const lastIndex=result.draws.length-1;
-  const latest=result.picks.find(x=>x.drawIndex===lastIndex);
-  if(latest){
-    current.style.display="block";
-    current.innerHTML=`Для последнего дроу <b>${result.draws[lastIndex]}</b> в максимальном сценарии:
-      <b>${esc(fullName(latest.p))}</b> → <b>${latest.slot}</b> (${rating(latest.p).toFixed(1)} FPTS).`;
-  }else current.style.display="none";
-}
-function addDraw(){
-  const team=document.getElementById("pickTeam").value;
-  state.drawHistory=Array.isArray(state.drawHistory)?state.drawHistory:[];
-  if(state.drawHistory.length>=6){
-    alert("В составе только 6 слотов. Сначала убери один дроу или очисти историю.");
-    return;
-  }
-  state.drawHistory.push(team);
-  saveState();
-  renderPotential();
-  renderHelperStats();
-  recommend();
-}
-function undoDraw(){
-  state.drawHistory=Array.isArray(state.drawHistory)?state.drawHistory:[];
-  state.drawHistory.pop();
-  saveState();renderPotential();renderHelperStats();
-}
-function clearDraws(){
-  state.drawHistory=[];
-  saveState();renderPotential();renderHelperStats();
+      <div>
+        <b>${esc(x.name)}</b>
+        <div class="meta">${x.team} · ${x.status}</div>
+      </div>
+      <div class="fp">${(+x.fpts).toFixed(1)}</div>
+    </div>
+  `).join("") || '<div class="muted small">Нет доступной комбинации.</div>';
 }
 
 function perTeamBest(slot){
@@ -539,9 +588,14 @@ window.takePick=function(id,slot){
   if(!p)return;
   state.roster=state.roster||{};
   state.roster[slot]={id:p._id,name:fullName(p),team:p.team,fpts:rating(p)};
-  saveState();syncSlots();renderRoster();renderHelperStats();recommend();
+  saveState();
+  syncSlots();
+  renderRoster();
+  renderHelperStats();
+  renderPotential();
+  recommend();
 }
-window.removePick=function(slot){if(state.roster)delete state.roster[slot];saveState();syncSlots();renderRoster();renderHelperStats()}
+window.removePick=function(slot){if(state.roster)delete state.roster[slot];saveState();syncSlots();renderRoster();renderHelperStats();renderPotential();recommend()}
 function syncSlots(){
   document.querySelectorAll("#slots input").forEach(x=>x.checked=!state.roster?.[x.value]);
 }
@@ -593,11 +647,8 @@ function setup(){
  document.getElementById("dbSearch").oninput=renderDB;
  document.getElementById("pickTeam").onchange=()=>{renderHelperStats();recommend()};
  document.querySelectorAll("#slots input").forEach(x=>x.onchange=renderHelperStats);
- document.getElementById("addDraw").onclick=addDraw;
- document.getElementById("undoDraw").onclick=undoDraw;
- document.getElementById("clearDraws").onclick=clearDraws;
  document.getElementById("recommend").onclick=recommend;
- document.getElementById("resetRoster").onclick=()=>{state.roster={};saveState();syncSlots();renderRoster();renderHelperStats();document.getElementById("results").innerHTML=""};
+ document.getElementById("resetRoster").onclick=()=>{state.roster={};saveState();syncSlots();renderRoster();renderHelperStats();renderPotential();recommend()};
  document.getElementById("saveOverride").onclick=saveOverride;
  document.getElementById("clearOverride").onclick=clearOverride;
  document.getElementById("importLive").onchange=e=>{if(e.target.files[0])importLive(e.target.files[0])};
