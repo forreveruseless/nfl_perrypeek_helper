@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NFLPerry NBA Assistant V5</title>
+<title>NFLPerry NBA Assistant V6</title>
 <style>
 :root{
  --bg:#080b11;--p:#101722;--p2:#0c121b;--line:#263247;--text:#f5f7fb;--muted:#94a2b7;
@@ -37,12 +37,36 @@ select:focus,input:focus{border-color:#728df0;box-shadow:0 0 0 3px rgba(114,141,
 .pill{display:inline-block;border:1px solid #344158;background:#172131;color:#d1dcf0;padding:3px 7px;border-radius:999px;font-size:11px;margin:1px 2px}
 .muted{color:var(--muted)}.small{font-size:12px}.good{color:var(--green);font-weight:850}.warn{color:var(--yellow);font-weight:850}
 .chips{display:flex;flex-wrap:wrap;gap:7px}.chip input{display:none}.chip span{display:inline-flex;padding:8px 11px;border:1px solid var(--line);border-radius:999px;color:#c5d0df;cursor:pointer}.chip input:checked+span{background:rgba(125,153,255,.16);border-color:#718bed;color:white}
+
+.potential{
+  position:relative;overflow:hidden;margin-bottom:18px;padding:20px;
+  border:1px solid #c77a35;border-radius:18px;
+  background:
+    radial-gradient(650px 240px at 100% 0,rgba(255,138,42,.20),transparent 60%),
+    linear-gradient(180deg,rgba(42,29,20,.95),rgba(14,19,28,.98));
+  box-shadow:0 18px 50px rgba(0,0,0,.25)
+}
+.potential-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;align-items:start}
+.potential-label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#f1b87e;font-weight:900}
+.potential-value{font-size:clamp(38px,7vw,72px);line-height:.95;font-weight:950;letter-spacing:-.055em;margin:8px 0 4px}
+.potential-value small{font-size:.24em;letter-spacing:0;color:#d4a578}
+.potential-sub{color:#c4cfde;max-width:680px}
+.draw-history{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
+.draw-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #4a566b;background:#111a27;border-radius:999px;padding:6px 9px;font-weight:850}
+.draw-chip i{font-style:normal;color:#7e8ca1;font-size:11px}
+.optimal-list{display:grid;gap:7px;margin-top:10px}
+.optimal-row{display:grid;grid-template-columns:48px 1fr auto;gap:9px;align-items:center;padding:8px 10px;border:1px solid #344056;border-radius:11px;background:rgba(12,18,27,.72)}
+.optimal-row .slot{font-weight:950;color:#a9baff}
+.optimal-row .fp{font-weight:950;color:#ffd0a4}
+.current-plan{margin-top:10px;padding:9px 10px;border:1px solid #5a4931;border-radius:11px;background:rgba(89,57,26,.18);color:#f0d4b7}
+.draw-controls{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+
 .results{display:grid;gap:10px;margin-top:13px}.card{display:grid;grid-template-columns:1fr auto;gap:10px;padding:14px;border:1px solid var(--line);border-radius:15px;background:#0d141e}.card.top{border-color:#c97732;background:linear-gradient(180deg,rgba(173,91,29,.16),rgba(13,20,30,.97))}.name{font-size:17px;font-weight:900}.meta{color:var(--muted);font-size:12px;margin-top:3px}.score{text-align:right;min-width:100px}.score b{font-size:23px}.score small{display:block;color:var(--muted)}.reason{grid-column:1/-1;border-top:1px solid #202a3a;padding-top:9px;color:#c6d0df;font-size:12px}
 .roster{display:grid;gap:8px}.roster-row{display:grid;grid-template-columns:58px 1fr auto;gap:9px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:#0d131d}.pos{font-weight:900;color:#a8baff}.empty{color:#68758a}.remove{border:0;background:transparent;color:#ff9aad;font-size:18px;cursor:pointer}
 .teamgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.teamcard{border:1px solid var(--line);border-radius:12px;background:#0d131d;padding:10px}.teamcard b{font-size:16px}.teamcard span{display:block;color:var(--muted);font-size:11px}
 .status{margin-top:10px;padding:10px 12px;border-radius:11px;display:none}.status.show{display:block}.status.ok{background:#0e2a20;border:1px solid #255d48;color:#aff1d3}.status.bad{background:#2d161d;border:1px solid #6d2d40;color:#ffb0bd}
 .footer{margin-top:18px;color:#748196;font-size:12px}
-@media(max-width:900px){.grid{grid-template-columns:1fr}header{flex-direction:column;align-items:flex-start}.badge{white-space:normal}}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.potential-grid{grid-template-columns:1fr}header{flex-direction:column;align-items:flex-start}.badge{white-space:normal}}
 @media(max-width:620px){.row,.row3{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.teamgrid{grid-template-columns:1fr 1fr}.tabs{flex-direction:column}}
 </style>
 </head>
@@ -50,7 +74,7 @@ select:focus,input:focus{border-color:#728df0;box-shadow:0 0 0 3px rgba(114,141,
 <div class="wrap">
 <header>
  <div>
-  <h1>NFLPerry NBA<br>Assistant V5</h1>
+  <h1>NFLPerry NBA<br>Assistant V6</h1>
   <p class="lead">Теперь рейтинг не нужно собирать вручную: база взята прямо из ответа NFLPerry <b>nba-fantasy / bestSeason</b>. Поле <b>fpts</b> — значение, которое использует NBA SIM.</p>
  </div>
  <div class="badge" id="snapshotBadge">снимок базы загружается…</div>
@@ -126,14 +150,41 @@ select:focus,input:focus{border-color:#728df0;box-shadow:0 0 0 3px rgba(114,141,
 
 <section class="view" id="helper">
 <div class="grid">
- <main class="panel">
+ <main>
+  <section class="potential">
+   <div class="potential-grid">
+    <div>
+     <div class="potential-label">Потенциальный максимум по уже выпавшим командам</div>
+     <div class="potential-value" id="potentialTotal">0.0 <small>FPTS</small></div>
+     <div class="potential-sub" id="potentialSub">
+      Добавь первую выпавшую команду. Максимум считается как лучшая возможная комбинация игроков с учётом PG / SG / SF / PF / C / 6TH.
+     </div>
+     <div class="draw-history" id="drawHistory"></div>
+     <div class="current-plan" id="currentPlan" style="display:none"></div>
+    </div>
+    <div>
+     <div class="potential-label">Оптимальный состав для этих дроу</div>
+     <div class="optimal-list" id="optimalLineup"></div>
+    </div>
+   </div>
+  </section>
+
+  <section class="panel">
   <h2>Лучший пик сейчас</h2>
   <div class="notice">
-   Выбери выпавшую команду и оставшиеся слоты. Помощник сравнит фактический <b>FPTS</b> игрока с тем,
-   насколько трудно потом заменить эту позицию по остальным командам.
+   Сначала добавь выпавшую команду в историю. Верхний блок покажет <b>математический максимум</b> для всех уже выпавших команд.
+   Ниже помощник подскажет варианты именно для текущей команды.
   </div>
 
-  <label>Выпала команда</label><select id="pickTeam"></select>
+  <div class="draw-controls">
+   <div><label>Выпала команда</label><select id="pickTeam"></select></div>
+   <button class="btn primary" id="addDraw">+ Добавить дроу</button>
+  </div>
+  <div class="actions">
+   <button class="btn ghost tiny" id="undoDraw">Убрать последнюю команду</button>
+   <button class="btn ghost tiny" id="clearDraws">Очистить историю дроу</button>
+  </div>
+
   <label>Свободные позиции</label><div class="chips" id="slots"></div>
   <div class="actions">
    <button class="btn primary" id="recommend">Показать лучший пик</button>
@@ -148,6 +199,7 @@ select:focus,input:focus{border-color:#728df0;box-shadow:0 0 0 3px rgba(114,141,
   </div>
 
   <div class="results" id="results"></div>
+  </section>
  </main>
 
  <aside>
@@ -167,7 +219,7 @@ select:focus,input:focus{border-color:#728df0;box-shadow:0 0 0 3px rgba(114,141,
 </div>
 </section>
 
-<div class="footer">V5 использует точный снимок NFLPerry из присланного HAR. Локальные поправки и текущий состав автоматически сохраняются в браузере.</div>
+<div class="footer">V6 использует точный снимок NFLPerry из HAR. История выпавших команд, потенциальный максимум, локальные поправки и текущий состав автоматически сохраняются в браузере.</div>
 </div>
 
 <script>
@@ -186,10 +238,10 @@ let players = SNAPSHOT;
 let state = loadState();
 
 function loadState(){
-  let s={overrides:{},roster:{},importedAt:null};
+  let s={overrides:{},roster:{},drawHistory:[],importedAt:null};
   try{
     const raw=localStorage.getItem(KEY);
-    if(raw) return {...s,...JSON.parse(raw)};
+    if(raw){const parsed=JSON.parse(raw);return {...s,...parsed,drawHistory:Array.isArray(parsed.drawHistory)?parsed.drawHistory:[]};}
   }catch(e){}
   // Migrate manual values from older helper versions if present.
   for(const k of OLD_KEYS){
@@ -260,6 +312,158 @@ function renderDB(){
 function renderTeamGrid(){
   document.getElementById("teamGrid").innerHTML=ACTIVE_TEAMS.map(t=>`<div class="teamcard"><b>${t}</b><span>${TEAM_NAMES[t]}</span><span>${teamPlayers(t).length} игроков</span></div>`).join("");
 }
+
+function slotCandidates(team,slot,limit){
+  return teamPlayers(team)
+    .filter(p=>posEligible(p,slot))
+    .sort((a,b)=>rating(b)-rating(a))
+    .slice(0,Math.max(1,limit));
+}
+function permutationsOfSlots(k){
+  const out=[];
+  const used=new Array(SLOT_ORDER.length).fill(false);
+  const cur=[];
+  function rec(){
+    if(cur.length===k){out.push([...cur]);return}
+    for(let i=0;i<SLOT_ORDER.length;i++){
+      if(used[i])continue;
+      used[i]=true;cur.push(SLOT_ORDER[i]);rec();cur.pop();used[i]=false;
+    }
+  }
+  rec();
+  return out;
+}
+function bestTeamMatching(team, assigned){
+  // assigned: [{drawIndex,slot}], all for the same team.
+  const n=assigned.length;
+  const lists=assigned.map(a=>slotCandidates(team,a.slot,n));
+  if(lists.some(x=>!x.length)) return null;
+
+  let best=null;
+  const used=new Set();
+  const chosen=new Array(n);
+
+  // Harder slots first for faster pruning, but keep mapping back to original item index.
+  const order=[...Array(n).keys()].sort((i,j)=>lists[i].length-lists[j].length);
+  const maxRemaining=new Array(n+1).fill(0);
+  for(let z=n-1;z>=0;z--){
+    const idx=order[z];
+    maxRemaining[z]=maxRemaining[z+1]+(lists[idx][0]?rating(lists[idx][0]):0);
+  }
+
+  function rec(depth,total){
+    if(best && total+maxRemaining[depth]<=best.total+1e-9) return;
+    if(depth===n){
+      best={total, picks:assigned.map((a,i)=>({drawIndex:a.drawIndex,slot:a.slot,p:chosen[i]}))};
+      return;
+    }
+    const i=order[depth];
+    for(const p of lists[i]){
+      const id=`${p.team}|${p._id}|${fullName(p)}`;
+      if(used.has(id))continue;
+      used.add(id);chosen[i]=p;
+      rec(depth+1,total+rating(p));
+      used.delete(id);
+    }
+  }
+  rec(0,0);
+  return best;
+}
+function potentialMaximum(draws){
+  const clean=(draws||[]).filter(t=>ACTIVE_TEAMS.includes(t)).slice(0,6);
+  const k=clean.length;
+  if(!k) return {total:0,picks:[],draws:clean};
+
+  let best=null;
+  const slotPerms=permutationsOfSlots(k); // max 720 for six draws
+
+  for(const slots of slotPerms){
+    const grouped={};
+    for(let i=0;i<k;i++){
+      const team=clean[i];
+      (grouped[team]??=[]).push({drawIndex:i,slot:slots[i]});
+    }
+
+    let total=0;
+    let picks=[];
+    let feasible=true;
+    for(const [team,assigned] of Object.entries(grouped)){
+      const r=bestTeamMatching(team,assigned);
+      if(!r){feasible=false;break}
+      total+=r.total;picks.push(...r.picks);
+    }
+    if(feasible && (!best || total>best.total+1e-9)){
+      best={total,picks,draws:clean};
+    }
+  }
+  if(!best) return {total:0,picks:[],draws:clean};
+  best.picks.sort((a,b)=>a.drawIndex-b.drawIndex);
+  return best;
+}
+function renderPotential(){
+  state.drawHistory=Array.isArray(state.drawHistory)?state.drawHistory:[];
+  const result=potentialMaximum(state.drawHistory);
+  const total=document.getElementById("potentialTotal");
+  const sub=document.getElementById("potentialSub");
+  const hist=document.getElementById("drawHistory");
+  const lineup=document.getElementById("optimalLineup");
+  const current=document.getElementById("currentPlan");
+
+  total.innerHTML=`${result.total.toFixed(1)} <small>FPTS</small>`;
+
+  if(!result.draws.length){
+    sub.textContent="Добавь первую выпавшую команду. Максимум считается как лучшая возможная комбинация игроков с учётом PG / SG / SF / PF / C / 6TH.";
+    hist.innerHTML='<span class="muted small">Пока ни одной команды не добавлено.</span>';
+    lineup.innerHTML='<div class="muted small">Оптимальный состав появится после первого дроу.</div>';
+    current.style.display="none";
+    return;
+  }
+
+  sub.innerHTML=`Точный максимум для <b>${result.draws.length}</b> ${result.draws.length===1?"выпавшей команды":"выпавших команд"}.
+  Каждый дроу даёт ровно одного игрока; позиции не повторяются, а один и тот же игрок не может использоваться дважды.`;
+
+  hist.innerHTML=result.draws.map((t,i)=>`<span class="draw-chip"><i>${i+1}</i>${t}</span>`).join("");
+
+  lineup.innerHTML=result.picks
+    .slice()
+    .sort((a,b)=>SLOT_ORDER.indexOf(a.slot)-SLOT_ORDER.indexOf(b.slot))
+    .map(x=>`<div class="optimal-row">
+      <div class="slot">${x.slot}</div>
+      <div><b>${esc(fullName(x.p))}</b><div class="meta">${x.p.team} · дроу #${x.drawIndex+1}</div></div>
+      <div class="fp">${rating(x.p).toFixed(1)}</div>
+    </div>`).join("");
+
+  const lastIndex=result.draws.length-1;
+  const latest=result.picks.find(x=>x.drawIndex===lastIndex);
+  if(latest){
+    current.style.display="block";
+    current.innerHTML=`Для последнего дроу <b>${result.draws[lastIndex]}</b> в максимальном сценарии:
+      <b>${esc(fullName(latest.p))}</b> → <b>${latest.slot}</b> (${rating(latest.p).toFixed(1)} FPTS).`;
+  }else current.style.display="none";
+}
+function addDraw(){
+  const team=document.getElementById("pickTeam").value;
+  state.drawHistory=Array.isArray(state.drawHistory)?state.drawHistory:[];
+  if(state.drawHistory.length>=6){
+    alert("В составе только 6 слотов. Сначала убери один дроу или очисти историю.");
+    return;
+  }
+  state.drawHistory.push(team);
+  saveState();
+  renderPotential();
+  renderHelperStats();
+  recommend();
+}
+function undoDraw(){
+  state.drawHistory=Array.isArray(state.drawHistory)?state.drawHistory:[];
+  state.drawHistory.pop();
+  saveState();renderPotential();renderHelperStats();
+}
+function clearDraws(){
+  state.drawHistory=[];
+  saveState();renderPotential();renderHelperStats();
+}
+
 function perTeamBest(slot){
   const vals=[];
   for(const t of ACTIVE_TEAMS){
@@ -374,7 +578,7 @@ function importLive(file){
 function refreshSelectors(){
  teamOptions(document.getElementById("dbTeam"));teamOptions(document.getElementById("pickTeam"));
 }
-function renderAll(){renderDB();renderTeamGrid();renderRoster();renderHelperStats()}
+function renderAll(){renderDB();renderTeamGrid();renderRoster();renderHelperStats();renderPotential()}
 function setup(){
  refreshSelectors();
  document.getElementById("dbTeam").value="GSW";document.getElementById("pickTeam").value="GSW";
@@ -389,6 +593,9 @@ function setup(){
  document.getElementById("dbSearch").oninput=renderDB;
  document.getElementById("pickTeam").onchange=()=>{renderHelperStats();recommend()};
  document.querySelectorAll("#slots input").forEach(x=>x.onchange=renderHelperStats);
+ document.getElementById("addDraw").onclick=addDraw;
+ document.getElementById("undoDraw").onclick=undoDraw;
+ document.getElementById("clearDraws").onclick=clearDraws;
  document.getElementById("recommend").onclick=recommend;
  document.getElementById("resetRoster").onclick=()=>{state.roster={};saveState();syncSlots();renderRoster();renderHelperStats();document.getElementById("results").innerHTML=""};
  document.getElementById("saveOverride").onclick=saveOverride;
